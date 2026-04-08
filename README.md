@@ -5,6 +5,7 @@ StudentsTrack is a browser-based classroom attention monitor built with React, T
 ## Highlights
 
 - Stable per-face tracking IDs to reduce flicker and misclassification when MediaPipe changes detection order.
+- Relaxed face-detection thresholds plus short-lived track retention so faces are less likely to disappear when students look down at a book.
 - Explicit camera lifecycle management with cleanup on reset, stop, and unmount.
 - Welcome-screen language selection for Spanish, Galician, English, French, German, Portuguese, Catalan, and Basque.
 - Sleepy-student tracking in the live summary, timeline, and session export.

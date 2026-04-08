@@ -89,6 +89,20 @@ export class FaceTracker {
     this.nextStableId = 0
   }
 
+  getRecentlyMissingTrackIds(activeStableIds: number[], now: number, graceMs: number): number[] {
+    const activeSet = new Set(activeStableIds)
+    const missingTrackIds: number[] = []
+
+    for (const [trackId, track] of this.tracks) {
+      if (activeSet.has(trackId)) continue
+      if (now - track.lastSeenAt <= graceMs) {
+        missingTrackIds.push(trackId)
+      }
+    }
+
+    return missingTrackIds
+  }
+
   private prune(now: number) {
     for (const [trackId, track] of this.tracks) {
       if (now - track.lastSeenAt > TRACK_MAX_AGE_MS) {

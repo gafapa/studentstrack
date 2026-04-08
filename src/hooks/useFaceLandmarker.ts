@@ -6,6 +6,7 @@ import { classifyAttention, classifyEmotion, StateSmoother } from '../lib/attent
 import { FaceTracker } from '../lib/faceTracking'
 
 const MAX_FACES = 30
+const LOST_FACE_GRACE_MS = 900
 
 export interface UseFaceLandmarkerReturn {
   students: StudentDetection[]
@@ -20,6 +21,7 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
   const rafRef = useRef<number | null>(null)
   const smootherRef = useRef(new StateSmoother())
   const trackerRef = useRef(new FaceTracker())
+  const lastKnownStudentsRef = useRef(new Map<number, StudentDetection>())
   const [students, setStudents] = useState<StudentDetection[]>([])
   const [isInitializing, setIsInitializing] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
@@ -42,6 +44,9 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
               'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
             delegate: 'GPU',
           },
+          minFaceDetectionConfidence: 0.35,
+          minFacePresenceConfidence: 0.3,
+          minTrackingConfidence: 0.3,
           outputFacialTransformationMatrixes: true,
           outputFaceBlendshapes: true,
           numFaces: MAX_FACES,
@@ -78,6 +83,7 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
     }
     smootherRef.current.clear()
     trackerRef.current.clear()
+    lastKnownStudentsRef.current.clear()
     setStudents([])
   }, [])
 
@@ -115,7 +121,8 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
         }
       })
 
-      const stableIds = trackerRef.current.assignStableIds(boxes, performance.now())
+      const now = performance.now()
+      const stableIds = trackerRef.current.assignStableIds(boxes, now)
       const detected: StudentDetection[] = []
 
       for (let i = 0; i < boxes.length; i++) {
@@ -144,7 +151,19 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
         })
       }
 
-      setStudents(detected)
+      const nextStudents = [...detected]
+      const recentMissingIds = trackerRef.current.getRecentlyMissingTrackIds(stableIds, now, LOST_FACE_GRACE_MS)
+      for (const stableId of recentMissingIds) {
+        const previousStudent = lastKnownStudentsRef.current.get(stableId)
+        if (!previousStudent) continue
+        nextStudents.push(previousStudent)
+      }
+
+      lastKnownStudentsRef.current = new Map(
+        nextStudents.map((student) => [student.stableId, student]),
+      )
+
+      setStudents(nextStudents)
       rafRef.current = requestAnimationFrame(loop)
     }
 
