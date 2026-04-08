@@ -2,8 +2,20 @@ import type { SessionStats } from '../types/attention'
 import { AttentionState } from '../types/attention'
 import { STATE_COLORS } from '../constants/thresholds'
 
+interface Copy {
+  summary: string
+  students: string
+  attentive: string
+  distracted: string
+  absent: string
+  sleepy: string
+}
+
 interface Props {
   stats: SessionStats
+  copy: Copy
+  sleepyText: (count: number) => string
+  attentionAlertText: (value: number) => string
 }
 
 function formatTime(seconds: number) {
@@ -14,13 +26,14 @@ function formatTime(seconds: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export function ClassSummary({ stats }: Props) {
+export function ClassSummary({ stats, copy, sleepyText, attentionAlertText }: Props) {
   const detected = stats.currentStudents.length
   const attentive = stats.currentStudents.filter(
     (s) => s.state === AttentionState.Working || s.state === AttentionState.Watching
   ).length
   const distracted = stats.currentStudents.filter((s) => s.state === AttentionState.Distracted).length
   const absent = stats.currentStudents.filter((s) => s.state === AttentionState.Absent).length
+  const sleepy = stats.currentStudents.filter((s) => s.emotion === 'sleepy').length
 
   const pct = (n: number) => (detected > 0 ? Math.round((n / detected) * 100) : 0)
 
@@ -30,31 +43,37 @@ export function ClassSummary({ stats }: Props) {
 
   const attentionPct = detected > 0 ? Math.round((attentive / detected) * 100) : 100
   const showAlert = stats.isRunning && detected > 0 && attentionPct < 50
+  const showSleepyAlert = stats.isRunning && sleepy > 0
 
   return (
     <div className="bg-gray-900 rounded-xl p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-white font-semibold text-xs uppercase tracking-wide">Summary</h2>
+        <h2 className="text-white font-semibold text-xs uppercase tracking-wide">{copy.summary}</h2>
         <span className="text-gray-400 text-xs font-mono">{formatTime(stats.elapsed)}</span>
       </div>
 
       {showAlert && (
         <div className="flex items-center gap-1.5 bg-red-900/50 border border-red-600/60 rounded-lg px-2 py-1.5">
-          <span className="text-red-300 text-xs font-medium">
-            Attention dropped to {attentionPct}%.
-          </span>
+          <span className="text-red-300 text-xs font-medium">{attentionAlertText(attentionPct)}</span>
+        </div>
+      )}
+
+      {showSleepyAlert && (
+        <div className="flex items-center gap-1.5 bg-amber-900/40 border border-amber-600/50 rounded-lg px-2 py-1.5">
+          <span className="text-amber-200 text-xs font-medium">{sleepyText(sleepy)}</span>
         </div>
       )}
 
       <div className="text-center py-1">
         <span className="text-4xl font-bold text-white">{detected}</span>
-        <span className="text-gray-400 text-xs ml-1">students</span>
+        <span className="text-gray-400 text-xs ml-1">{copy.students}</span>
       </div>
 
       <div className="space-y-1.5">
-        <SummaryRow icon="OK" label="Attentive" count={attentive} pct={pct(attentive)} color={green} />
-        <SummaryRow icon="!" label="Distracted" count={distracted} pct={pct(distracted)} color={red} />
-        <SummaryRow icon="--" label="Absent" count={absent} pct={pct(absent)} color={gray} />
+        <SummaryRow icon="OK" label={copy.attentive} count={attentive} pct={pct(attentive)} color={green} />
+        <SummaryRow icon="!" label={copy.distracted} count={distracted} pct={pct(distracted)} color={red} />
+        <SummaryRow icon="--" label={copy.absent} count={absent} pct={pct(absent)} color={gray} />
+        <SummaryRow icon="ZZ" label={copy.sleepy} count={sleepy} pct={pct(sleepy)} color="#f59e0b" />
       </div>
 
       {detected > 0 && (

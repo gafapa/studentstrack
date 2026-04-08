@@ -6,9 +6,10 @@ interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>
   isReady: boolean
   students: StudentDetection[]
+  waitingText: string
 }
 
-export function ClassroomView({ videoRef, isReady, students }: Props) {
+export function ClassroomView({ videoRef, isReady, students, waitingText }: Props) {
   const [dims, setDims] = useState({ videoW: 1920, videoH: 1080, canvasW: 0, canvasH: 0 })
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export function ClassroomView({ videoRef, isReady, students }: Props) {
       />
 
       {isReady && dims.canvasW > 0 && (
-        <div className="absolute inset-0" style={{ transform: 'scaleX(-1)' }}>
+        <div className="absolute inset-0">
           <FaceOverlay
             students={students}
             videoWidth={dims.videoW}
@@ -71,7 +72,7 @@ export function ClassroomView({ videoRef, isReady, students }: Props) {
               d="M15 10l4.553-2.069A1 1 0 0121 8.868V15.13a1 1 0 01-1.447.898L15 14M3 8h12a2 2 0 012 2v4a2 2 0 01-2 2H3a2 2 0 01-2-2v-4a2 2 0 012-2z"
             />
           </svg>
-          <p className="text-gray-400 text-sm">Waiting for camera...</p>
+          <p className="text-gray-400 text-sm">{waitingText}</p>
         </div>
       )}
     </div>

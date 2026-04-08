@@ -3,12 +3,22 @@ import type { TimelineEntry } from '../types/attention'
 import { STATE_COLORS } from '../constants/thresholds'
 import { AttentionState } from '../types/attention'
 
+interface Copy {
+  timeline: string
+  attentive: string
+  distracted: string
+  sleepy: string
+  startSessionToSeeTimeline: string
+  now: string
+}
+
 interface Props {
   timeline: TimelineEntry[]
   maxEntries: number
+  copy: Copy
 }
 
-export function TimelineChart({ timeline, maxEntries }: Props) {
+export function TimelineChart({ timeline, maxEntries, copy }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(900)
@@ -44,7 +54,7 @@ export function TimelineChart({ timeline, maxEntries }: Props) {
       ctx.font = '12px sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('Start a session to see the timeline.', W / 2, H / 2)
+      ctx.fillText(copy.startSessionToSeeTimeline, W / 2, H / 2)
       return
     }
 
@@ -66,13 +76,17 @@ export function TimelineChart({ timeline, maxEntries }: Props) {
       }
 
       const workingH = (entry.workingCount / total) * H
-      const restH = H - workingH
+      const sleepyH = (entry.sleepyCount / total) * H
+      const distractedH = Math.max(0, H - workingH - sleepyH)
 
       ctx.fillStyle = STATE_COLORS[AttentionState.Working]
-      ctx.fillRect(x, restH, Math.max(barW - 0.5, 1), workingH)
+      ctx.fillRect(x, H - workingH, Math.max(barW - 0.5, 1), workingH)
 
       ctx.fillStyle = `${STATE_COLORS[AttentionState.Distracted]}88`
-      ctx.fillRect(x, 0, Math.max(barW - 0.5, 1), restH)
+      ctx.fillRect(x, 0, Math.max(barW - 0.5, 1), distractedH)
+
+      ctx.fillStyle = '#f59e0b'
+      ctx.fillRect(x, distractedH, Math.max(barW - 0.5, 1), sleepyH)
     }
 
     ctx.strokeStyle = '#374151'
@@ -90,23 +104,27 @@ export function TimelineChart({ timeline, maxEntries }: Props) {
     ctx.textBaseline = 'bottom'
     for (let i = 0; i <= maxEntries; i += 60) {
       const secsAgo = maxEntries - i
-      const label = secsAgo === 0 ? 'now' : `-${secsAgo}s`
+      const label = secsAgo === 0 ? copy.now : `-${secsAgo}s`
       ctx.textAlign = i === 0 ? 'left' : i === maxEntries ? 'right' : 'center'
       ctx.fillText(label, i * barW, H - 2)
     }
-  }, [timeline, maxEntries, width])
+  }, [timeline, maxEntries, width, copy])
 
   return (
     <div className="bg-gray-900 rounded-xl px-3 py-2 flex items-center gap-3">
       <div className="flex flex-col gap-1 flex-shrink-0">
-        <span className="text-white font-semibold text-xs uppercase tracking-wide">Timeline</span>
+        <span className="text-white font-semibold text-xs uppercase tracking-wide">{copy.timeline}</span>
         <span className="flex items-center gap-1 text-xs text-gray-400">
           <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: STATE_COLORS[AttentionState.Working] }} />
-          Attentive
+          {copy.attentive}
         </span>
         <span className="flex items-center gap-1 text-xs text-gray-400">
           <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: STATE_COLORS[AttentionState.Distracted] }} />
-          Distracted
+          {copy.distracted}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-gray-400">
+          <span className="w-2 h-2 rounded-full inline-block bg-amber-500" />
+          {copy.sleepy}
         </span>
       </div>
       <div ref={containerRef} className="flex-1 overflow-hidden">
