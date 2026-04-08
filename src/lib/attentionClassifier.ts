@@ -3,7 +3,7 @@ import { THRESHOLDS } from '../constants/thresholds'
 
 /**
  * Classify attention state from head pose.
- * Priority: no pose → Absent, big yaw → Distracted, low pitch → Working, else → Watching
+ * Priority: no pose -> Absent, big yaw -> Distracted, low pitch -> Working, else -> Watching
  */
 export function classifyAttention(pose: HeadPose | null): AttentionState {
   if (!pose) return AttentionState.Absent
@@ -27,11 +27,11 @@ export function classifyAttention(pose: HeadPose | null): AttentionState {
 export class StateSmoother {
   private buffers = new Map<number, AttentionState[]>()
 
-  update(faceIndex: number, state: AttentionState): AttentionState {
-    let buf = this.buffers.get(faceIndex)
+  update(stableId: number, state: AttentionState): AttentionState {
+    let buf = this.buffers.get(stableId)
     if (!buf) {
       buf = []
-      this.buffers.set(faceIndex, buf)
+      this.buffers.set(stableId, buf)
     }
 
     buf.push(state)
@@ -70,7 +70,7 @@ export function classifyEmotion(
   blendshapes: { categoryName: string; score: number }[]
 ): Emotion {
   const get = (name: string) =>
-    blendshapes.find(b => b.categoryName === name)?.score ?? 0
+    blendshapes.find((b) => b.categoryName === name)?.score ?? 0
 
   const smile = (get('mouthSmileLeft') + get('mouthSmileRight')) / 2
   const frown = (get('mouthFrownLeft') + get('mouthFrownRight')) / 2

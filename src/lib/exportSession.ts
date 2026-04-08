@@ -13,7 +13,7 @@ export function exportSessionCSV(stats: SessionStats) {
   if (!stats.startTime || stats.timeline.length === 0) return
 
   const rows: string[] = [
-    'segundos,timestamp,atentos,total,pct_atentos',
+    'seconds,timestamp,attentive,total,attentive_pct',
   ]
 
   const startTs = stats.startTime
@@ -25,18 +25,17 @@ export function exportSessionCSV(stats: SessionStats) {
     rows.push(`${i + 1},${iso},${entry.workingCount},${entry.totalCount},${pct}`)
   })
 
-  // Summary block at the end
   rows.push('')
-  rows.push('# Resumen sesión')
-  rows.push(`inicio,${new Date(startTs).toISOString()}`)
-  rows.push(`duracion_segundos,${stats.elapsed}`)
-  rows.push(`total_snapshots,${stats.totalSnapshots}`)
+  rows.push('# Session summary')
+  rows.push(`start,${new Date(startTs).toISOString()}`)
+  rows.push(`duration_seconds,${stats.elapsed}`)
+  rows.push(`total_samples,${stats.totalSamples}`)
 
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `sesion_${formatDate(startTs)}.csv`
+  a.download = `session_${formatDate(startTs)}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }

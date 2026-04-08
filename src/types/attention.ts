@@ -27,7 +27,7 @@ export interface NormalizedLandmark {
 }
 
 export interface StudentDetection {
-  faceIndex: number
+  stableId: number
   boundingBox: BoundingBox
   pose: HeadPose | null
   state: AttentionState
@@ -45,7 +45,7 @@ export interface SessionStats {
   isRunning: boolean
   startTime: number | null
   elapsed: number // seconds
-  totalSnapshots: number
+  totalSamples: number
   stateCounts: Record<AttentionState, number>
   timeline: TimelineEntry[]
   currentStudents: StudentDetection[]

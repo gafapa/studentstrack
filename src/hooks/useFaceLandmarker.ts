@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import type { StudentDetection } from '../types/attention'
-import { AttentionState } from '../types/attention'
 import { extractHeadPose, isMatrixValid } from '../lib/headPose'
 import { classifyAttention, classifyEmotion, StateSmoother } from '../lib/attentionClassifier'
+import { FaceTracker } from '../lib/faceTracking'
 
 const MAX_FACES = 30
 
@@ -19,6 +19,7 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
   const landmarkerRef = useRef<FaceLandmarker | null>(null)
   const rafRef = useRef<number | null>(null)
   const smootherRef = useRef(new StateSmoother())
+  const trackerRef = useRef(new FaceTracker())
   const [students, setStudents] = useState<StudentDetection[]>([])
   const [isInitializing, setIsInitializing] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
@@ -31,9 +32,10 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
     async function init() {
       try {
         const vision = await FilesetResolver.forVisionTasks(
-          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm'
         )
         if (cancelled) return
+
         const lm = await FaceLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath:
@@ -45,21 +47,24 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
           numFaces: MAX_FACES,
           runningMode: 'VIDEO',
         })
+
         if (cancelled) {
           lm.close()
           return
         }
+
         landmarkerRef.current = lm
         setIsInitializing(false)
-      } catch (e) {
+      } catch {
         if (!cancelled) {
-          setInitError('No se pudo cargar el modelo de detección.')
+          setInitError('Unable to load the face detection model.')
           setIsInitializing(false)
         }
       }
     }
 
     init()
+
     return () => {
       cancelled = true
     }
@@ -72,65 +77,74 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
       rafRef.current = null
     }
     smootherRef.current.clear()
+    trackerRef.current.clear()
     setStudents([])
   }, [])
 
   const startDetection = useCallback((video: HTMLVideoElement) => {
-    if (!landmarkerRef.current) return
+    if (!landmarkerRef.current || runningRef.current) return
     runningRef.current = true
 
     const loop = () => {
       if (!runningRef.current || !landmarkerRef.current) return
-      if (video.readyState < 2) {
+
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         rafRef.current = requestAnimationFrame(loop)
         return
       }
 
       const result = landmarkerRef.current.detectForVideo(video, performance.now())
+      const boxes = (result.faceLandmarks ?? []).map((landmarks) => {
+        let minX = Infinity
+        let minY = Infinity
+        let maxX = -Infinity
+        let maxY = -Infinity
 
-      const detected: StudentDetection[] = []
-
-      const faceCount = result.faceLandmarks?.length ?? 0
-      for (let i = 0; i < faceCount; i++) {
-        const landmarks = result.faceLandmarks[i]
-
-        // Compute bounding box from landmarks (normalized 0-1)
-        let minX = 1, minY = 1, maxX = 0, maxY = 0
         for (const lm of landmarks) {
           if (lm.x < minX) minX = lm.x
           if (lm.y < minY) minY = lm.y
           if (lm.x > maxX) maxX = lm.x
           if (lm.y > maxY) maxY = lm.y
         }
-        const boundingBox = {
+
+        return {
           x: minX,
           y: minY,
           width: maxX - minX,
           height: maxY - minY,
         }
+      })
 
-        // Extract head pose from transformation matrix
+      const stableIds = trackerRef.current.assignStableIds(boxes, performance.now())
+      const detected: StudentDetection[] = []
+
+      for (let i = 0; i < boxes.length; i++) {
+        const landmarks = result.faceLandmarks?.[i] ?? []
+        const boundingBox = boxes[i]
+        const stableId = stableIds[i]
+
         let pose = null
-        const matrices = result.facialTransformationMatrixes
-        if (matrices && matrices[i]) {
-          const mat = matrices[i]
-          if (mat.data && isMatrixValid(mat.data)) {
-            pose = extractHeadPose(mat.data)
-          }
+        const matrix = result.facialTransformationMatrixes?.[i]
+        if (matrix?.data && isMatrixValid(matrix.data)) {
+          pose = extractHeadPose(matrix.data)
         }
 
         const rawState = classifyAttention(pose)
-        const state = smootherRef.current.update(i, rawState)
-
+        const state = smootherRef.current.update(stableId, rawState)
         const blendshapes = result.faceBlendshapes?.[i]?.categories ?? []
         const emotion = classifyEmotion(blendshapes)
 
-        detected.push({ faceIndex: i, boundingBox, pose, state, landmarks, emotion })
+        detected.push({
+          stableId,
+          boundingBox,
+          pose,
+          state,
+          landmarks,
+          emotion,
+        })
       }
 
-      // Mark faces no longer detected as Absent for the smoother
       setStudents(detected)
-
       rafRef.current = requestAnimationFrame(loop)
     }
 
@@ -139,11 +153,10 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
 
   useEffect(() => {
     return () => {
-      runningRef.current = false
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+      stopDetection()
       landmarkerRef.current?.close()
     }
-  }, [])
+  }, [stopDetection])
 
   return { students, isInitializing, initError, startDetection, stopDetection }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { StudentDetection } from '../types/attention'
 import { FaceOverlay } from './FaceOverlay'
 
@@ -9,10 +9,8 @@ interface Props {
 }
 
 export function ClassroomView({ videoRef, isReady, students }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState({ videoW: 1920, videoH: 1080, canvasW: 0, canvasH: 0 })
 
-  // Track rendered video dimensions for overlay scaling
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
@@ -26,6 +24,7 @@ export function ClassroomView({ videoRef, isReady, students }: Props) {
       })
     }
 
+    updateDims()
     video.addEventListener('loadedmetadata', updateDims)
     video.addEventListener('resize', updateDims)
 
@@ -40,7 +39,7 @@ export function ClassroomView({ videoRef, isReady, students }: Props) {
   }, [videoRef])
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-black rounded-xl overflow-hidden">
+    <div className="relative w-full h-full bg-black rounded-xl overflow-hidden">
       <video
         ref={videoRef}
         autoPlay
@@ -51,10 +50,7 @@ export function ClassroomView({ videoRef, isReady, students }: Props) {
       />
 
       {isReady && dims.canvasW > 0 && (
-        <div
-          className="absolute inset-0"
-          style={{ transform: 'scaleX(-1)' }}
-        >
+        <div className="absolute inset-0" style={{ transform: 'scaleX(-1)' }}>
           <FaceOverlay
             students={students}
             videoWidth={dims.videoW}
@@ -67,11 +63,15 @@ export function ClassroomView({ videoRef, isReady, students }: Props) {
 
       {!isReady && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white gap-3">
-          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M15 10l4.553-2.069A1 1 0 0121 8.868V15.13a1 1 0 01-1.447.898L15 14M3 8h12a2 2 0 012 2v4a2 2 0 01-2 2H3a2 2 0 01-2-2v-4a2 2 0 012-2z" />
+          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15 10l4.553-2.069A1 1 0 0121 8.868V15.13a1 1 0 01-1.447.898L15 14M3 8h12a2 2 0 012 2v4a2 2 0 01-2 2H3a2 2 0 01-2-2v-4a2 2 0 012-2z"
+            />
           </svg>
-          <p className="text-gray-400 text-sm">Esperando cámara...</p>
+          <p className="text-gray-400 text-sm">Waiting for camera...</p>
         </div>
       )}
     </div>

@@ -15,7 +15,7 @@ function makeInitialStats(): SessionStats {
     isRunning: false,
     startTime: null,
     elapsed: 0,
-    totalSnapshots: 0,
+    totalSamples: 0,
     stateCounts: { ...EMPTY_COUNTS },
     timeline: [],
     currentStudents: [],
@@ -61,13 +61,11 @@ export function useAttentionSession(students: StudentDetection[]) {
 
       // Accumulate state counts for all detected students this frame
       const newCounts = { ...accRef.current }
-      let added = 0
       for (const s of students) {
         newCounts[s.state] = (newCounts[s.state] ?? 0) + 1
-        added++
       }
       accRef.current = newCounts
-      totalRef.current += added
+      totalRef.current += 1
 
       // Timeline sample (once per second)
       const now = performance.now()
@@ -94,7 +92,7 @@ export function useAttentionSession(students: StudentDetection[]) {
       return {
         ...prev,
         elapsed,
-        totalSnapshots: totalRef.current,
+        totalSamples: totalRef.current,
         stateCounts: { ...newCounts },
         timeline,
         currentStudents: students,

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 
 export type CameraError = 'permission-denied' | 'not-found' | 'unknown'
 
@@ -19,6 +19,8 @@ export function useWebcam(): UseWebcamReturn {
   const startCamera = useCallback(async () => {
     setError(null)
     setIsReady(false)
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -50,8 +52,14 @@ export function useWebcam(): UseWebcamReturn {
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+      videoRef.current.onloadeddata = null
+    }
     setIsReady(false)
   }, [])
+
+  useEffect(() => stopCamera, [stopCamera])
 
   return { videoRef, isReady, error, startCamera, stopCamera }
 }

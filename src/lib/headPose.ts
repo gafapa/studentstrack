@@ -1,7 +1,7 @@
 import type { HeadPose } from '../types/attention'
 
 /**
- * Extract Euler angles (pitch/yaw/roll) from a MediaPipe 4×4 column-major
+ * Extract Euler angles (pitch/yaw/roll) from a MediaPipe 4x4 column-major
  * facial transformation matrix.
  *
  * The matrix is stored as a flat Float32Array of 16 values in column-major order:
@@ -15,25 +15,17 @@ import type { HeadPose } from '../types/attention'
  * Yaw positive = head turns right, negative = turns left.
  */
 export function extractHeadPose(matrixData: number[]): HeadPose {
-  // Rotation matrix elements (column-major → row access)
+  // Rotation matrix elements (column-major -> row access)
   const m00 = matrixData[0]
   const m10 = matrixData[1]
   const m20 = matrixData[2]
-  const m01 = matrixData[4]
   const m11 = matrixData[5]
   const m21 = matrixData[6]
-  const m02 = matrixData[8]
-  const m12 = matrixData[9]
   const m22 = matrixData[10]
 
   // ZYX Tait-Bryan decomposition
-  // Yaw (Y-axis rotation)
   const yaw = Math.atan2(m20, Math.sqrt(m00 * m00 + m10 * m10))
-
-  // Pitch (X-axis rotation)
   const pitch = Math.atan2(-m21, m22)
-
-  // Roll (Z-axis rotation)
   const roll = Math.atan2(-m10, m00)
 
   const toDeg = (r: number) => (r * 180) / Math.PI
@@ -45,9 +37,6 @@ export function extractHeadPose(matrixData: number[]): HeadPose {
   }
 }
 
-/**
- * Validate that the transformation matrix contains finite, reasonable values.
- */
 export function isMatrixValid(matrixData: number[]): boolean {
   if (matrixData.length < 16) return false
   for (let i = 0; i < 16; i++) {
