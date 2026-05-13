@@ -1,13 +1,12 @@
 {
   "_info": "This file is read by metagallego. Fill in title, description and techStack to document your project. The _info field is ignored.",
   "title": "StudentsTrack",
-  "description": "StudentsTrack is a classroom attention monitor. It uses the webcam plus face landmark detection to estimate student attention states locally in the browser.",
+  "description": "StudentsTrack is a browser-based classroom attention monitor that uses webcam input, MediaPipe face landmarks, and a Web Worker detection pipeline to estimate student attention locally.",
   "techStack": [
     "TypeScript",
     "React",
     "Vite",
     "Tailwind CSS",
     "MediaPipe Tasks Vision"
-  ],
-  "category": ""
+  ]
 }
