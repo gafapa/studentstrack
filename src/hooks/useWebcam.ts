@@ -36,10 +36,10 @@ export function useWebcam(): UseWebcamReturn {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
           facingMode: 'user',
-          frameRate: { ideal: 30 },
+          frameRate: { ideal: 24, max: 30 },
         },
       })
 

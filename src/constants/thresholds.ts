@@ -7,7 +7,7 @@ export const THRESHOLDS = {
   DISTRACTED_YAW_MIN: 22,      // |yaw| above this -> Distracted
 
   // Temporal smoothing
-  SMOOTHING_WINDOW_FRAMES: 10, // ~400ms at 25fps
+  SMOOTHING_WINDOW_FRAMES: 6, // ~600ms at 10fps detection cadence
 
   // Timeline sampling
   TIMELINE_SAMPLE_MS: 1000,    // record one entry per second

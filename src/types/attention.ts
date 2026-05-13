@@ -18,18 +18,11 @@ export interface BoundingBox {
   height: number
 }
 
-export interface NormalizedLandmark {
-  x: number
-  y: number
-  z: number
-}
-
 export interface StudentDetection {
   stableId: number
   boundingBox: BoundingBox
   pose: HeadPose | null
   state: AttentionState
-  landmarks: NormalizedLandmark[]
 }
 
 export interface TimelineEntry {

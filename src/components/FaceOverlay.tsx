@@ -3,11 +3,6 @@ import type { StudentDetection } from '../types/attention'
 import { STATE_COLORS } from '../constants/thresholds'
 import { AttentionState } from '../types/attention'
 
-const LEFT_EYE = [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7]
-const RIGHT_EYE = [362, 398, 384, 385, 386, 387, 388, 466, 263, 249, 390, 373, 374, 380, 381, 382]
-const LEFT_IRIS = 468
-const RIGHT_IRIS = 473
-
 interface Props {
   students: StudentDetection[]
   videoWidth: number
@@ -39,7 +34,7 @@ export function FaceOverlay({ students, videoWidth, videoHeight, canvasWidth, ca
     const mirrorX = (x: number) => canvasWidth - x
 
     for (const student of students) {
-      const { boundingBox, state, pose, stableId, landmarks } = student
+      const { boundingBox, state, pose, stableId } = student
       const color = STATE_COLORS[state]
 
       const x = mirrorX((boundingBox.x + boundingBox.width) * videoWidth * scaleX)
@@ -75,24 +70,6 @@ export function FaceOverlay({ students, videoWidth, videoHeight, canvasWidth, ca
       ctx.textBaseline = 'middle'
       ctx.fillText(labelText, rx + 6, labelY + labelH / 2)
 
-      if (landmarks.length >= 478) {
-        drawEyeContour(ctx, landmarks, LEFT_EYE, videoWidth, videoHeight, scaleX, scaleY, color)
-        drawEyeContour(ctx, landmarks, RIGHT_EYE, videoWidth, videoHeight, scaleX, scaleY, color)
-
-        const leftIris = landmarks[LEFT_IRIS]
-        const rightIris = landmarks[RIGHT_IRIS]
-        if (leftIris && rightIris) {
-          const irisR = Math.max(3, rw * 0.04)
-          drawIris(ctx, mirrorX(leftIris.x * videoWidth * scaleX), leftIris.y * videoHeight * scaleY, irisR, color)
-          drawIris(ctx, mirrorX(rightIris.x * videoWidth * scaleX), rightIris.y * videoHeight * scaleY, irisR, color)
-        }
-      } else if (landmarks.length > 0) {
-        const eyeY = ry + rh * 0.35
-        const eyeR = Math.max(3, rw * 0.05)
-        drawIris(ctx, rx + rw * 0.3, eyeY, eyeR, color)
-        drawIris(ctx, rx + rw * 0.7, eyeY, eyeR, color)
-      }
-
       if (pose) {
         const barX = rx + rw + 6
         const barH = rh
@@ -123,41 +100,6 @@ export function FaceOverlay({ students, videoWidth, videoHeight, canvasWidth, ca
   )
 }
 
-function drawEyeContour(
-  ctx: CanvasRenderingContext2D,
-  landmarks: { x: number; y: number }[],
-  indices: number[],
-  videoWidth: number,
-  videoHeight: number,
-  scaleX: number,
-  scaleY: number,
-  color: string,
-) {
-  ctx.beginPath()
-  for (let i = 0; i < indices.length; i++) {
-    const lm = landmarks[indices[i]]
-    if (!lm) continue
-    const px = canvasWidthFromScale(videoWidth, scaleX) - lm.x * videoWidth * scaleX
-    const py = lm.y * videoHeight * scaleY
-    if (i === 0) ctx.moveTo(px, py)
-    else ctx.lineTo(px, py)
-  }
-  ctx.closePath()
-  ctx.strokeStyle = `${color}cc`
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-}
-
-function drawIris(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string) {
-  ctx.beginPath()
-  ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  ctx.fillStyle = `${color}dd`
-  ctx.fill()
-  ctx.strokeStyle = '#fff8'
-  ctx.lineWidth = 1
-  ctx.stroke()
-}
-
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
@@ -170,8 +112,4 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.lineTo(x, y + r)
   ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
-}
-
-function canvasWidthFromScale(videoWidth: number, scaleX: number) {
-  return videoWidth * scaleX
 }

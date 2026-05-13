@@ -7,6 +7,8 @@ import { FaceTracker } from '../lib/faceTracking'
 
 const MAX_FACES = 30
 const LOST_FACE_GRACE_MS = 900
+const DETECTION_INTERVAL_MS = 100
+const DETECTION_RETRY_MS = 50
 const ASSET_BASE = import.meta.env.BASE_URL
 const MEDIAPIPE_WASM_PATH = `${ASSET_BASE}vendor/mediapipe/wasm`
 const FACE_LANDMARKER_MODEL_PATH = `${ASSET_BASE}vendor/mediapipe/models/face_landmarker.task`
@@ -21,7 +23,7 @@ export interface UseFaceLandmarkerReturn {
 
 export function useFaceLandmarker(): UseFaceLandmarkerReturn {
   const landmarkerRef = useRef<FaceLandmarker | null>(null)
-  const rafRef = useRef<number | null>(null)
+  const timerRef = useRef<number | null>(null)
   const smootherRef = useRef(new StateSmoother())
   const trackerRef = useRef(new FaceTracker())
   const lastKnownStudentsRef = useRef(new Map<number, StudentDetection>())
@@ -77,9 +79,9 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
 
   const stopDetection = useCallback(() => {
     runningRef.current = false
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current)
+      timerRef.current = null
     }
     smootherRef.current.clear()
     trackerRef.current.clear()
@@ -90,16 +92,30 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
   const startDetection = useCallback((video: HTMLVideoElement) => {
     if (!landmarkerRef.current || runningRef.current) return
     runningRef.current = true
+    let lastVideoTime = -1
+
+    const scheduleNext = (delayMs: number) => {
+      if (!runningRef.current) return
+      timerRef.current = window.setTimeout(loop, delayMs)
+    }
 
     const loop = () => {
+      timerRef.current = null
       if (!runningRef.current || !landmarkerRef.current) return
 
       if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-        rafRef.current = requestAnimationFrame(loop)
+        scheduleNext(DETECTION_RETRY_MS)
         return
       }
 
-      const result = landmarkerRef.current.detectForVideo(video, performance.now())
+      if (video.currentTime === lastVideoTime) {
+        scheduleNext(DETECTION_RETRY_MS)
+        return
+      }
+
+      lastVideoTime = video.currentTime
+      const detectionStartedAt = performance.now()
+      const result = landmarkerRef.current.detectForVideo(video, detectionStartedAt)
       const boxes = (result.faceLandmarks ?? []).map((landmarks) => {
         let minX = Infinity
         let minY = Infinity
@@ -126,7 +142,6 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
       const detected: StudentDetection[] = []
 
       for (let i = 0; i < boxes.length; i++) {
-        const landmarks = result.faceLandmarks?.[i] ?? []
         const boundingBox = boxes[i]
         const stableId = stableIds[i]
 
@@ -143,7 +158,6 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
           boundingBox,
           pose,
           state,
-          landmarks,
         })
       }
 
@@ -160,10 +174,11 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
       )
 
       setStudents(nextStudents)
-      rafRef.current = requestAnimationFrame(loop)
+      const elapsedMs = performance.now() - detectionStartedAt
+      scheduleNext(Math.max(0, DETECTION_INTERVAL_MS - elapsedMs))
     }
 
-    rafRef.current = requestAnimationFrame(loop)
+    scheduleNext(0)
   }, [])
 
   useEffect(() => {
