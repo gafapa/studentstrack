@@ -1,4 +1,4 @@
-import type { AttentionState, Emotion } from '../types/attention'
+import type { AttentionState } from '../types/attention'
 
 export type Locale = 'es' | 'gl' | 'en' | 'fr' | 'de' | 'pt' | 'ca' | 'eu'
 
@@ -17,18 +17,15 @@ type Translation = {
   stopCamera: string
   summary: string
   attentionDropped: string
-  sleepyTracker: string
   students: string
   attentive: string
   distracted: string
   absent: string
-  sleepy: string
   timeline: string
   startSessionToSeeTimeline: string
   now: string
   noFacesDetected: string
   state: string
-  emotion: string
   pitch: string
   waitingForCamera: string
   startSession: string
@@ -37,7 +34,6 @@ type Translation = {
   reset: string
   exportSessionCsv: string
   language: string
-  sleepySamples: string
   sessionSummary: string
   start: string
   durationSeconds: string
@@ -46,10 +42,8 @@ type Translation = {
   timestamp: string
   total: string
   attentivePct: string
-  sleepyPct: string
   record: string
   stateLabels: Record<AttentionState, string>
-  emotionLabels: Record<Emotion, string>
 }
 
 export const translations: Record<Locale, Translation> = {
@@ -68,18 +62,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Detener cámara',
     summary: 'Resumen',
     attentionDropped: 'La atención bajó al {value}%.',
-    sleepyTracker: 'Seguidor de dormidos: {count} estudiante{suffix} detectado{suffix2} ahora.',
     students: 'estudiantes',
     attentive: 'Atentos',
     distracted: 'Distraídos',
     absent: 'Ausentes',
-    sleepy: 'Dormidos',
     timeline: 'Timeline',
     startSessionToSeeTimeline: 'Inicia una sesión para ver el timeline.',
     now: 'ahora',
     noFacesDetected: 'No se detectan caras.',
     state: 'Estado',
-    emotion: 'Emoción',
     pitch: 'Inclinación',
     waitingForCamera: 'Esperando la cámara...',
     startSession: 'Iniciar sesión',
@@ -88,7 +79,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Reiniciar',
     exportSessionCsv: 'Exportar sesión CSV',
     language: 'Idioma',
-    sleepySamples: 'muestras_dormidos',
     sessionSummary: '# Resumen de sesión',
     start: 'inicio',
     durationSeconds: 'duracion_segundos',
@@ -97,10 +87,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'total',
     attentivePct: 'pct_atentos',
-    sleepyPct: 'pct_dormidos',
     record: 'REC',
     stateLabels: { working: 'Trabajando', watching: 'Observando', distracted: 'Distraído', absent: 'Ausente' },
-    emotionLabels: { neutral: 'Neutral', happy: 'Contento', sad: 'Triste', surprised: 'Sorprendido', angry: 'Enfadado', sleepy: 'Dormido' },
   },
   gl: {
     languageName: 'Galego',
@@ -117,18 +105,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Deter cámara',
     summary: 'Resumo',
     attentionDropped: 'A atención baixou ao {value}%.',
-    sleepyTracker: 'Seguidor de durmidos: {count} estudante{suffix} marcado{suffix2} agora.',
     students: 'estudantes',
     attentive: 'Atentos',
     distracted: 'Distraídos',
     absent: 'Ausentes',
-    sleepy: 'Durmidos',
     timeline: 'Timeline',
     startSessionToSeeTimeline: 'Inicia unha sesión para ver o timeline.',
     now: 'agora',
     noFacesDetected: 'Non se detectan caras.',
     state: 'Estado',
-    emotion: 'Emoción',
     pitch: 'Inclinación',
     waitingForCamera: 'Agardando pola cámara...',
     startSession: 'Iniciar sesión',
@@ -137,7 +122,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Reiniciar',
     exportSessionCsv: 'Exportar sesión CSV',
     language: 'Idioma',
-    sleepySamples: 'mostras_durmidos',
     sessionSummary: '# Resumo da sesión',
     start: 'inicio',
     durationSeconds: 'duracion_segundos',
@@ -146,10 +130,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'total',
     attentivePct: 'pct_atentos',
-    sleepyPct: 'pct_durmidos',
     record: 'REC',
     stateLabels: { working: 'Traballando', watching: 'Observando', distracted: 'Distraído', absent: 'Ausente' },
-    emotionLabels: { neutral: 'Neutral', happy: 'Contento', sad: 'Triste', surprised: 'Sorprendido', angry: 'Anoxado', sleepy: 'Durmido' },
   },
   en: {
     languageName: 'English',
@@ -166,18 +148,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Stop Camera',
     summary: 'Summary',
     attentionDropped: 'Attention dropped to {value}%.',
-    sleepyTracker: 'Sleepy tracker: {count} student{suffix} flagged now.',
     students: 'students',
     attentive: 'Attentive',
     distracted: 'Distracted',
     absent: 'Absent',
-    sleepy: 'Sleepy',
     timeline: 'Timeline',
     startSessionToSeeTimeline: 'Start a session to see the timeline.',
     now: 'now',
     noFacesDetected: 'No faces detected.',
     state: 'State',
-    emotion: 'Emotion',
     pitch: 'Pitch',
     waitingForCamera: 'Waiting for camera...',
     startSession: 'Start Session',
@@ -186,7 +165,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Reset',
     exportSessionCsv: 'Export Session CSV',
     language: 'Language',
-    sleepySamples: 'sleepy_samples',
     sessionSummary: '# Session summary',
     start: 'start',
     durationSeconds: 'duration_seconds',
@@ -195,10 +173,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'total',
     attentivePct: 'attentive_pct',
-    sleepyPct: 'sleepy_pct',
     record: 'REC',
     stateLabels: { working: 'Working', watching: 'Watching', distracted: 'Distracted', absent: 'Absent' },
-    emotionLabels: { neutral: 'Neutral', happy: 'Happy', sad: 'Sad', surprised: 'Surprised', angry: 'Angry', sleepy: 'Sleepy' },
   },
   fr: {
     languageName: 'Français',
@@ -215,18 +191,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Arrêter la caméra',
     summary: 'Résumé',
     attentionDropped: 'L’attention est tombée à {value} %.',
-    sleepyTracker: 'Suivi des endormis : {count} élève{suffix} signalé{suffix2} maintenant.',
     students: 'élèves',
     attentive: 'Attentifs',
     distracted: 'Distraits',
     absent: 'Absents',
-    sleepy: 'Endormis',
     timeline: 'Chronologie',
     startSessionToSeeTimeline: 'Démarrez une session pour voir la chronologie.',
     now: 'maintenant',
     noFacesDetected: 'Aucun visage détecté.',
     state: 'État',
-    emotion: 'Émotion',
     pitch: 'Inclinaison',
     waitingForCamera: 'En attente de la caméra...',
     startSession: 'Démarrer la session',
@@ -235,7 +208,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Réinitialiser',
     exportSessionCsv: 'Exporter la session CSV',
     language: 'Langue',
-    sleepySamples: 'echantillons_endormis',
     sessionSummary: '# Résumé de session',
     start: 'debut',
     durationSeconds: 'duree_secondes',
@@ -244,10 +216,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'total',
     attentivePct: 'pct_attentifs',
-    sleepyPct: 'pct_endormis',
     record: 'REC',
     stateLabels: { working: 'Travail', watching: 'Observation', distracted: 'Distrait', absent: 'Absent' },
-    emotionLabels: { neutral: 'Neutre', happy: 'Heureux', sad: 'Triste', surprised: 'Surpris', angry: 'En colère', sleepy: 'Endormi' },
   },
   de: {
     languageName: 'Deutsch',
@@ -264,18 +234,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Kamera stoppen',
     summary: 'Zusammenfassung',
     attentionDropped: 'Die Aufmerksamkeit ist auf {value}% gefallen.',
-    sleepyTracker: 'Schläfrigkeits-Tracker: {count} Schüler{suffix} gerade markiert.',
     students: 'Schüler',
     attentive: 'Aufmerksam',
     distracted: 'Abgelenkt',
     absent: 'Abwesend',
-    sleepy: 'Schläfrig',
     timeline: 'Zeitverlauf',
     startSessionToSeeTimeline: 'Starte eine Sitzung, um den Zeitverlauf zu sehen.',
     now: 'jetzt',
     noFacesDetected: 'Keine Gesichter erkannt.',
     state: 'Status',
-    emotion: 'Emotion',
     pitch: 'Neigung',
     waitingForCamera: 'Warten auf die Kamera...',
     startSession: 'Sitzung starten',
@@ -284,7 +251,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Zurücksetzen',
     exportSessionCsv: 'Sitzung als CSV exportieren',
     language: 'Sprache',
-    sleepySamples: 'schlaefrig_proben',
     sessionSummary: '# Sitzungszusammenfassung',
     start: 'start',
     durationSeconds: 'dauer_sekunden',
@@ -293,10 +259,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'gesamt',
     attentivePct: 'pct_aufmerksam',
-    sleepyPct: 'pct_schlaefrig',
     record: 'REC',
     stateLabels: { working: 'Arbeitet', watching: 'Beobachtet', distracted: 'Abgelenkt', absent: 'Abwesend' },
-    emotionLabels: { neutral: 'Neutral', happy: 'Fröhlich', sad: 'Traurig', surprised: 'Überrascht', angry: 'Wütend', sleepy: 'Schläfrig' },
   },
   pt: {
     languageName: 'Português',
@@ -313,18 +277,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Parar câmera',
     summary: 'Resumo',
     attentionDropped: 'A atenção caiu para {value}%.',
-    sleepyTracker: 'Rastreador de sonolência: {count} estudante{suffix} marcado{suffix2} agora.',
     students: 'estudantes',
     attentive: 'Atentos',
     distracted: 'Distraídos',
     absent: 'Ausentes',
-    sleepy: 'Sonolentos',
     timeline: 'Linha do tempo',
     startSessionToSeeTimeline: 'Inicie uma sessão para ver a linha do tempo.',
     now: 'agora',
     noFacesDetected: 'Nenhum rosto detectado.',
     state: 'Estado',
-    emotion: 'Emoção',
     pitch: 'Inclinação',
     waitingForCamera: 'Aguardando câmera...',
     startSession: 'Iniciar sessão',
@@ -333,7 +294,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Redefinir',
     exportSessionCsv: 'Exportar sessão CSV',
     language: 'Idioma',
-    sleepySamples: 'amostras_sonolencia',
     sessionSummary: '# Resumo da sessão',
     start: 'inicio',
     durationSeconds: 'duracao_segundos',
@@ -342,10 +302,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'total',
     attentivePct: 'pct_atentos',
-    sleepyPct: 'pct_sonolentos',
     record: 'REC',
     stateLabels: { working: 'Trabalhando', watching: 'Observando', distracted: 'Distraído', absent: 'Ausente' },
-    emotionLabels: { neutral: 'Neutro', happy: 'Feliz', sad: 'Triste', surprised: 'Surpreso', angry: 'Bravo', sleepy: 'Sonolento' },
   },
   ca: {
     languageName: 'Català',
@@ -362,18 +320,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Atura la càmera',
     summary: 'Resum',
     attentionDropped: 'L’atenció ha baixat al {value}%.',
-    sleepyTracker: 'Seguidor d’adormits: {count} estudiant{suffix} marcat{suffix2} ara.',
     students: 'estudiants',
     attentive: 'Atents',
     distracted: 'Distrets',
     absent: 'Absents',
-    sleepy: 'Adormits',
     timeline: 'Cronologia',
     startSessionToSeeTimeline: 'Inicia una sessió per veure la cronologia.',
     now: 'ara',
     noFacesDetected: 'No es detecten cares.',
     state: 'Estat',
-    emotion: 'Emoció',
     pitch: 'Inclinació',
     waitingForCamera: 'Esperant la càmera...',
     startSession: 'Inicia sessió',
@@ -382,7 +337,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Reinicia',
     exportSessionCsv: 'Exporta la sessió CSV',
     language: 'Idioma',
-    sleepySamples: 'mostres_adormits',
     sessionSummary: '# Resum de la sessió',
     start: 'inici',
     durationSeconds: 'durada_segons',
@@ -391,10 +345,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'total',
     attentivePct: 'pct_atents',
-    sleepyPct: 'pct_adormits',
     record: 'REC',
     stateLabels: { working: 'Treballant', watching: 'Observant', distracted: 'Distret', absent: 'Absent' },
-    emotionLabels: { neutral: 'Neutral', happy: 'Content', sad: 'Trist', surprised: 'Sorpres', angry: 'Enfadat', sleepy: 'Adormit' },
   },
   eu: {
     languageName: 'Euskara',
@@ -411,18 +363,15 @@ export const translations: Record<Locale, Translation> = {
     stopCamera: 'Gelditu kamera',
     summary: 'Laburpena',
     attentionDropped: 'Arreta {value}%era jaitsi da.',
-    sleepyTracker: 'Loguren jarraitzailea: {count} ikasle markatuta dago orain.',
     students: 'ikasle',
     attentive: 'Adi',
     distracted: 'Distraituta',
     absent: 'Kanpoan',
-    sleepy: 'Loguretsu',
     timeline: 'Denbora lerroa',
     startSessionToSeeTimeline: 'Hasi saio bat denbora lerroa ikusteko.',
     now: 'orain',
     noFacesDetected: 'Ez da aurpegirik detektatu.',
     state: 'Egoera',
-    emotion: 'Emozioa',
     pitch: 'Makurdura',
     waitingForCamera: 'Kameraren zain...',
     startSession: 'Hasi saioa',
@@ -431,7 +380,6 @@ export const translations: Record<Locale, Translation> = {
     reset: 'Berrezarri',
     exportSessionCsv: 'Esportatu saioaren CSV',
     language: 'Hizkuntza',
-    sleepySamples: 'logura_laginak',
     sessionSummary: '# Saioaren laburpena',
     start: 'hasiera',
     durationSeconds: 'iraupena_segundotan',
@@ -440,10 +388,8 @@ export const translations: Record<Locale, Translation> = {
     timestamp: 'timestamp',
     total: 'guztira',
     attentivePct: 'pct_adi',
-    sleepyPct: 'pct_logura',
     record: 'REC',
     stateLabels: { working: 'Lanean', watching: 'Begira', distracted: 'Distraituta', absent: 'Kanpoan' },
-    emotionLabels: { neutral: 'Neutrala', happy: 'Pozik', sad: 'Triste', surprised: 'Harrituta', angry: 'Haserre', sleepy: 'Loguretsu' },
   },
 }
 

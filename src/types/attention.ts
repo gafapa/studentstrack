@@ -5,8 +5,6 @@ export enum AttentionState {
   Absent = 'absent',
 }
 
-export type Emotion = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'sleepy'
-
 export interface HeadPose {
   pitch: number // degrees, negative = looking down
   yaw: number   // degrees, negative = left
@@ -32,7 +30,6 @@ export interface StudentDetection {
   pose: HeadPose | null
   state: AttentionState
   landmarks: NormalizedLandmark[]
-  emotion: Emotion
 }
 
 export interface TimelineEntry {

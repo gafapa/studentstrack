@@ -29,21 +29,3 @@ export const STATE_LABELS: Record<string, string> = {
   distracted: 'Distracted',
   absent: 'Absent',
 }
-
-export const EMOTION_LABELS: Record<string, string> = {
-  neutral: 'Neutral',
-  happy: 'Happy',
-  sad: 'Sad',
-  surprised: 'Surprised',
-  angry: 'Angry',
-  sleepy: 'Sleepy',
-}
-
-export const EMOTION_ICONS: Record<string, string> = {
-  neutral: ':|',
-  happy: ':)',
-  sad: ':(',
-  surprised: ':O',
-  angry: '>:(',
-  sleepy: 'Zz',
-}

@@ -1,4 +1,4 @@
-import { AttentionState, type Emotion, type HeadPose } from '../types/attention'
+import { AttentionState, type HeadPose } from '../types/attention'
 import { THRESHOLDS } from '../constants/thresholds'
 
 /**
@@ -61,27 +61,4 @@ export class StateSmoother {
   clear() {
     this.buffers.clear()
   }
-}
-
-/**
- * Classify emotion from MediaPipe face blendshape scores.
- */
-export function classifyEmotion(
-  blendshapes: { categoryName: string; score: number }[]
-): Emotion {
-  const get = (name: string) =>
-    blendshapes.find((b) => b.categoryName === name)?.score ?? 0
-
-  const smile = (get('mouthSmileLeft') + get('mouthSmileRight')) / 2
-  const frown = (get('mouthFrownLeft') + get('mouthFrownRight')) / 2
-  const blink = (get('eyeBlinkLeft') + get('eyeBlinkRight')) / 2
-  const wide = (get('eyeWideLeft') + get('eyeWideRight')) / 2
-  const browDown = (get('browDownLeft') + get('browDownRight')) / 2
-
-  if (blink > 0.55) return 'sleepy'
-  if (smile > 0.4) return 'happy'
-  if (wide > 0.45) return 'surprised'
-  if (browDown > 0.5 && smile < 0.2) return 'angry'
-  if (frown > 0.3) return 'sad'
-  return 'neutral'
 }

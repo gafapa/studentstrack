@@ -8,7 +8,7 @@ import { StudentGrid } from './components/StudentGrid'
 import { TimelineChart } from './components/TimelineChart'
 import { SessionControls } from './components/SessionControls'
 import { THRESHOLDS } from './constants/thresholds'
-import { getPluralSuffix, interpolate, localeOptions, translations, type Locale } from './lib/i18n'
+import { interpolate, localeOptions, translations, type Locale } from './lib/i18n'
 
 export default function App() {
   const { videoRef, isReady, error, startCamera, stopCamera } = useWebcam()
@@ -132,13 +132,6 @@ export default function App() {
           <ClassSummary
             stats={stats}
             copy={copy}
-            sleepyText={(count) =>
-              interpolate(copy.sleepyTracker, {
-                count,
-                suffix: getPluralSuffix(count),
-                suffix2: locale === 'fr' ? getPluralSuffix(count) : '',
-              })
-            }
             attentionAlertText={(value) => interpolate(copy.attentionDropped, { value })}
           />
           <SessionControls

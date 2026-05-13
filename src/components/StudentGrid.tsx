@@ -1,15 +1,13 @@
 import type { StudentDetection } from '../types/attention'
 import { AttentionState } from '../types/attention'
-import { STATE_COLORS, EMOTION_ICONS } from '../constants/thresholds'
+import { STATE_COLORS } from '../constants/thresholds'
 
 interface Copy {
   students: string
   noFacesDetected: string
   state: string
-  emotion: string
   pitch: string
   stateLabels: Record<AttentionState, string>
-  emotionLabels: Record<StudentDetection['emotion'], string>
 }
 
 interface Props {
@@ -46,10 +44,9 @@ export function StudentGrid({ students, copy }: Props) {
 }
 
 function StudentCard({ student, copy }: { student: StudentDetection; copy: Copy }) {
-  const { stableId, state, pose, emotion } = student
+  const { stableId, state, pose } = student
   const color = STATE_COLORS[state]
   const stateLabel = copy.stateLabels[state]
-  const emotionLabel = copy.emotionLabels[emotion]
 
   return (
     <div
@@ -64,9 +61,6 @@ function StudentCard({ student, copy }: { student: StudentDetection; copy: Copy 
         {STATE_ICONS[state]}
       </div>
       <span className="text-white text-xs font-mono leading-none">#{stableId + 1}</span>
-      <span className="text-xs leading-none text-gray-300" title={`${copy.emotion}: ${emotionLabel}`}>
-        {EMOTION_ICONS[emotion] ?? ':|'}
-      </span>
       {pose && (
         <span className="text-gray-500 font-mono leading-none text-[10px]" title={`${copy.pitch}: ${Math.round(pose.pitch)} deg`}>
           {Math.round(pose.pitch)} deg

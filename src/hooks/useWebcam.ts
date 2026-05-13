@@ -6,7 +6,7 @@ export interface UseWebcamReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>
   isReady: boolean
   error: CameraError | null
-  startCamera: () => Promise<void>
+  startCamera: () => Promise<boolean>
   stopCamera: () => void
 }
 
@@ -15,6 +15,17 @@ export function useWebcam(): UseWebcamReturn {
   const streamRef = useRef<MediaStream | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<CameraError | null>(null)
+
+  const attachStream = useCallback(() => {
+    if (!videoRef.current || !streamRef.current) return
+    if (videoRef.current.srcObject === streamRef.current) return
+
+    videoRef.current.srcObject = streamRef.current
+    videoRef.current.onloadeddata = () => setIsReady(true)
+    void videoRef.current.play().catch(() => {
+      setError('unknown')
+    })
+  }, [])
 
   const startCamera = useCallback(async () => {
     setError(null)
@@ -33,11 +44,8 @@ export function useWebcam(): UseWebcamReturn {
       })
 
       streamRef.current = stream
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.onloadeddata = () => setIsReady(true)
-      }
+      attachStream()
+      return true
     } catch (err) {
       if (err instanceof DOMException) {
         if (err.name === 'NotAllowedError') setError('permission-denied')
@@ -46,6 +54,7 @@ export function useWebcam(): UseWebcamReturn {
       } else {
         setError('unknown')
       }
+      return false
     }
   }, [])
 
@@ -58,6 +67,10 @@ export function useWebcam(): UseWebcamReturn {
     }
     setIsReady(false)
   }, [])
+
+  useEffect(() => {
+    attachStream()
+  })
 
   useEffect(() => stopCamera, [stopCamera])
 

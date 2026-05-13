@@ -7,7 +7,6 @@ interface Copy {
   timeline: string
   attentive: string
   distracted: string
-  sleepy: string
   startSessionToSeeTimeline: string
   now: string
 }
@@ -76,17 +75,13 @@ export function TimelineChart({ timeline, maxEntries, copy }: Props) {
       }
 
       const workingH = (entry.workingCount / total) * H
-      const sleepyH = (entry.sleepyCount / total) * H
-      const distractedH = Math.max(0, H - workingH - sleepyH)
+      const distractedH = Math.max(0, H - workingH)
 
       ctx.fillStyle = STATE_COLORS[AttentionState.Working]
       ctx.fillRect(x, H - workingH, Math.max(barW - 0.5, 1), workingH)
 
       ctx.fillStyle = `${STATE_COLORS[AttentionState.Distracted]}88`
       ctx.fillRect(x, 0, Math.max(barW - 0.5, 1), distractedH)
-
-      ctx.fillStyle = '#f59e0b'
-      ctx.fillRect(x, distractedH, Math.max(barW - 0.5, 1), sleepyH)
     }
 
     ctx.strokeStyle = '#374151'
@@ -121,10 +116,6 @@ export function TimelineChart({ timeline, maxEntries, copy }: Props) {
         <span className="flex items-center gap-1 text-xs text-gray-400">
           <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: STATE_COLORS[AttentionState.Distracted] }} />
           {copy.distracted}
-        </span>
-        <span className="flex items-center gap-1 text-xs text-gray-400">
-          <span className="w-2 h-2 rounded-full inline-block bg-amber-500" />
-          {copy.sleepy}
         </span>
       </div>
       <div ref={containerRef} className="flex-1 overflow-hidden">

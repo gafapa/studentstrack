@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { StudentDetection } from '../types/attention'
-import { STATE_COLORS, EMOTION_ICONS } from '../constants/thresholds'
+import { STATE_COLORS } from '../constants/thresholds'
 import { AttentionState } from '../types/attention'
 
 const LEFT_EYE = [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7]
@@ -36,12 +36,13 @@ export function FaceOverlay({ students, videoWidth, videoHeight, canvasWidth, ca
 
     const scaleX = canvasWidth / videoWidth
     const scaleY = canvasHeight / videoHeight
+    const mirrorX = (x: number) => canvasWidth - x
 
     for (const student of students) {
-      const { boundingBox, state, pose, stableId, landmarks, emotion } = student
+      const { boundingBox, state, pose, stableId, landmarks } = student
       const color = STATE_COLORS[state]
 
-      const x = boundingBox.x * videoWidth * scaleX
+      const x = mirrorX((boundingBox.x + boundingBox.width) * videoWidth * scaleX)
       const y = boundingBox.y * videoHeight * scaleY
       const w = boundingBox.width * videoWidth * scaleX
       const h = boundingBox.height * videoHeight * scaleY
@@ -60,8 +61,7 @@ export function FaceOverlay({ students, videoWidth, videoHeight, canvasWidth, ca
       ctx.stroke()
       ctx.shadowBlur = 0
 
-      const emotionIcon = EMOTION_ICONS[emotion] ?? ''
-      const labelText = `#${stableId + 1} ${STATE_ICONS[state]} ${emotionIcon}`.trim()
+      const labelText = `#${stableId + 1} ${STATE_ICONS[state]}`
       ctx.font = `bold ${Math.max(12, rw * 0.18)}px sans-serif`
       const textW = ctx.measureText(labelText).width
       const labelH = Math.max(18, rw * 0.2)
@@ -83,8 +83,8 @@ export function FaceOverlay({ students, videoWidth, videoHeight, canvasWidth, ca
         const rightIris = landmarks[RIGHT_IRIS]
         if (leftIris && rightIris) {
           const irisR = Math.max(3, rw * 0.04)
-          drawIris(ctx, leftIris.x * videoWidth * scaleX, leftIris.y * videoHeight * scaleY, irisR, color)
-          drawIris(ctx, rightIris.x * videoWidth * scaleX, rightIris.y * videoHeight * scaleY, irisR, color)
+          drawIris(ctx, mirrorX(leftIris.x * videoWidth * scaleX), leftIris.y * videoHeight * scaleY, irisR, color)
+          drawIris(ctx, mirrorX(rightIris.x * videoWidth * scaleX), rightIris.y * videoHeight * scaleY, irisR, color)
         }
       } else if (landmarks.length > 0) {
         const eyeY = ry + rh * 0.35
@@ -137,7 +137,7 @@ function drawEyeContour(
   for (let i = 0; i < indices.length; i++) {
     const lm = landmarks[indices[i]]
     if (!lm) continue
-    const px = lm.x * videoWidth * scaleX
+    const px = canvasWidthFromScale(videoWidth, scaleX) - lm.x * videoWidth * scaleX
     const py = lm.y * videoHeight * scaleY
     if (i === 0) ctx.moveTo(px, py)
     else ctx.lineTo(px, py)
@@ -170,4 +170,8 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.lineTo(x, y + r)
   ctx.quadraticCurveTo(x, y, x + r, y)
   ctx.closePath()
+}
+
+function canvasWidthFromScale(videoWidth: number, scaleX: number) {
+  return videoWidth * scaleX
 }

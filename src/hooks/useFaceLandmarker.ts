@@ -2,11 +2,14 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import type { StudentDetection } from '../types/attention'
 import { extractHeadPose, isMatrixValid } from '../lib/headPose'
-import { classifyAttention, classifyEmotion, StateSmoother } from '../lib/attentionClassifier'
+import { classifyAttention, StateSmoother } from '../lib/attentionClassifier'
 import { FaceTracker } from '../lib/faceTracking'
 
 const MAX_FACES = 30
 const LOST_FACE_GRACE_MS = 900
+const ASSET_BASE = import.meta.env.BASE_URL
+const MEDIAPIPE_WASM_PATH = `${ASSET_BASE}vendor/mediapipe/wasm`
+const FACE_LANDMARKER_MODEL_PATH = `${ASSET_BASE}vendor/mediapipe/models/face_landmarker.task`
 
 export interface UseFaceLandmarkerReturn {
   students: StudentDetection[]
@@ -33,22 +36,19 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
 
     async function init() {
       try {
-        const vision = await FilesetResolver.forVisionTasks(
-          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm'
-        )
+        const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_PATH)
         if (cancelled) return
 
         const lm = await FaceLandmarker.createFromOptions(vision, {
           baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+            modelAssetPath: FACE_LANDMARKER_MODEL_PATH,
             delegate: 'GPU',
           },
           minFaceDetectionConfidence: 0.35,
           minFacePresenceConfidence: 0.3,
           minTrackingConfidence: 0.3,
           outputFacialTransformationMatrixes: true,
-          outputFaceBlendshapes: true,
+          outputFaceBlendshapes: false,
           numFaces: MAX_FACES,
           runningMode: 'VIDEO',
         })
@@ -138,16 +138,12 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
 
         const rawState = classifyAttention(pose)
         const state = smootherRef.current.update(stableId, rawState)
-        const blendshapes = result.faceBlendshapes?.[i]?.categories ?? []
-        const emotion = classifyEmotion(blendshapes)
-
         detected.push({
           stableId,
           boundingBox,
           pose,
           state,
           landmarks,
-          emotion,
         })
       }
 

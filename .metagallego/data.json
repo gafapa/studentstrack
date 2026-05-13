@@ -1,0 +1,13 @@
+{
+  "_info": "This file is read by metagallego. Fill in title, description and techStack to document your project. The _info field is ignored.",
+  "title": "StudentsTrack",
+  "description": "StudentsTrack is a classroom attention monitor. It uses the webcam plus face landmark detection to estimate student attention states locally in the browser.",
+  "techStack": [
+    "TypeScript",
+    "React",
+    "Vite",
+    "Tailwind CSS",
+    "MediaPipe Tasks Vision"
+  ],
+  "category": ""
+}

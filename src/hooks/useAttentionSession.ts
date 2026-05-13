@@ -28,23 +28,24 @@ export function useAttentionSession(students: StudentDetection[]) {
   const totalRef = useRef(0)
   const timelineRef = useRef<TimelineEntry[]>([])
   const lastSampleRef = useRef<number>(0)
+  const elapsedBeforeRunRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const startSession = useCallback(() => {
-    accRef.current = { ...EMPTY_COUNTS }
-    totalRef.current = 0
-    timelineRef.current = []
     lastSampleRef.current = performance.now()
     setStats((prev) => ({
-      ...makeInitialStats(),
+      ...prev,
       isRunning: true,
       startTime: Date.now(),
-      currentStudents: prev.currentStudents,
     }))
   }, [])
 
   const stopSession = useCallback(() => {
-    setStats((prev) => ({ ...prev, isRunning: false }))
+    setStats((prev) => {
+      if (!prev.isRunning) return prev
+      elapsedBeforeRunRef.current = prev.elapsed
+      return { ...prev, isRunning: false }
+    })
   }, [])
 
   const resetSession = useCallback(() => {
@@ -52,6 +53,7 @@ export function useAttentionSession(students: StudentDetection[]) {
     accRef.current = { ...EMPTY_COUNTS }
     totalRef.current = 0
     timelineRef.current = []
+    elapsedBeforeRunRef.current = 0
   }, [])
 
   // Accumulate stats and sample timeline each second when running
@@ -87,7 +89,9 @@ export function useAttentionSession(students: StudentDetection[]) {
         timelineRef.current = timeline
       }
 
-      const elapsed = prev.startTime ? Math.floor((Date.now() - prev.startTime) / 1000) : 0
+      const elapsed = prev.startTime
+        ? elapsedBeforeRunRef.current + Math.floor((Date.now() - prev.startTime) / 1000)
+        : elapsedBeforeRunRef.current
 
       return {
         ...prev,
@@ -106,7 +110,7 @@ export function useAttentionSession(students: StudentDetection[]) {
       timerRef.current = setInterval(() => {
         setStats((prev) =>
           prev.isRunning && prev.startTime
-            ? { ...prev, elapsed: Math.floor((Date.now() - prev.startTime) / 1000) }
+            ? { ...prev, elapsed: elapsedBeforeRunRef.current + Math.floor((Date.now() - prev.startTime) / 1000) }
             : prev
         )
       }, 1000)

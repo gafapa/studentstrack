@@ -1,5 +1,5 @@
-const CACHE_NAME = 'studentstrack-shell-v1'
-const APP_BASE = '/studentstrack/'
+const CACHE_NAME = 'studenstrack-shell-v3'
+const APP_BASE = '/studenstrack/'
 const APP_SHELL = [
   APP_BASE,
   `${APP_BASE}manifest.webmanifest`,
@@ -31,6 +31,22 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
+  if (!url.pathname.startsWith(APP_BASE)) return
+
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone))
+          }
+          return response
+        })
+        .catch(() => caches.match(request).then((cachedResponse) => cachedResponse ?? caches.match(APP_BASE))),
+    )
+    return
+  }
 
   event.respondWith(
     caches.match(request).then((cachedResponse) => {

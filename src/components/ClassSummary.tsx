@@ -8,13 +8,11 @@ interface Copy {
   attentive: string
   distracted: string
   absent: string
-  sleepy: string
 }
 
 interface Props {
   stats: SessionStats
   copy: Copy
-  sleepyText: (count: number) => string
   attentionAlertText: (value: number) => string
 }
 
@@ -26,14 +24,13 @@ function formatTime(seconds: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export function ClassSummary({ stats, copy, sleepyText, attentionAlertText }: Props) {
+export function ClassSummary({ stats, copy, attentionAlertText }: Props) {
   const detected = stats.currentStudents.length
   const attentive = stats.currentStudents.filter(
     (s) => s.state === AttentionState.Working || s.state === AttentionState.Watching
   ).length
   const distracted = stats.currentStudents.filter((s) => s.state === AttentionState.Distracted).length
   const absent = stats.currentStudents.filter((s) => s.state === AttentionState.Absent).length
-  const sleepy = stats.currentStudents.filter((s) => s.emotion === 'sleepy').length
 
   const pct = (n: number) => (detected > 0 ? Math.round((n / detected) * 100) : 0)
 
@@ -43,7 +40,6 @@ export function ClassSummary({ stats, copy, sleepyText, attentionAlertText }: Pr
 
   const attentionPct = detected > 0 ? Math.round((attentive / detected) * 100) : 100
   const showAlert = stats.isRunning && detected > 0 && attentionPct < 50
-  const showSleepyAlert = stats.isRunning && sleepy > 0
 
   return (
     <div className="bg-gray-900 rounded-xl p-3 space-y-2">
@@ -58,12 +54,6 @@ export function ClassSummary({ stats, copy, sleepyText, attentionAlertText }: Pr
         </div>
       )}
 
-      {showSleepyAlert && (
-        <div className="flex items-center gap-1.5 bg-amber-900/40 border border-amber-600/50 rounded-lg px-2 py-1.5">
-          <span className="text-amber-200 text-xs font-medium">{sleepyText(sleepy)}</span>
-        </div>
-      )}
-
       <div className="text-center py-1">
         <span className="text-4xl font-bold text-white">{detected}</span>
         <span className="text-gray-400 text-xs ml-1">{copy.students}</span>
@@ -73,7 +63,6 @@ export function ClassSummary({ stats, copy, sleepyText, attentionAlertText }: Pr
         <SummaryRow icon="OK" label={copy.attentive} count={attentive} pct={pct(attentive)} color={green} />
         <SummaryRow icon="!" label={copy.distracted} count={distracted} pct={pct(distracted)} color={red} />
         <SummaryRow icon="--" label={copy.absent} count={absent} pct={pct(absent)} color={gray} />
-        <SummaryRow icon="ZZ" label={copy.sleepy} count={sleepy} pct={pct(sleepy)} color="#f59e0b" />
       </div>
 
       {detected > 0 && (
