@@ -1,17 +1,27 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import type { StudentDetection } from '../types/attention'
-import { extractHeadPose, isMatrixValid } from '../lib/headPose'
-import { classifyAttention, StateSmoother } from '../lib/attentionClassifier'
-import { FaceTracker } from '../lib/faceTracking'
 
-const MAX_FACES = 30
-const LOST_FACE_GRACE_MS = 900
-const DETECTION_INTERVAL_MS = 100
+const FRAME_WIDTH = 640
+const FRAME_HEIGHT = 360
+const DETECTION_INTERVAL_MS = 180
 const DETECTION_RETRY_MS = 50
-const ASSET_BASE = import.meta.env.BASE_URL
-const MEDIAPIPE_WASM_PATH = `${ASSET_BASE}vendor/mediapipe/wasm`
-const FACE_LANDMARKER_MODEL_PATH = `${ASSET_BASE}vendor/mediapipe/models/face_landmarker.task`
+
+type WorkerResponse =
+  | { type: 'ready' }
+  | { type: 'students'; students: StudentDetection[]; processingMs: number }
+  | { type: 'error'; message: string }
+
+async function createDetectionFrame(video: HTMLVideoElement) {
+  try {
+    return await createImageBitmap(video, {
+      resizeWidth: FRAME_WIDTH,
+      resizeHeight: FRAME_HEIGHT,
+      resizeQuality: 'low',
+    })
+  } catch {
+    return createImageBitmap(video)
+  }
+}
 
 export interface UseFaceLandmarkerReturn {
   students: StudentDetection[]
@@ -22,11 +32,10 @@ export interface UseFaceLandmarkerReturn {
 }
 
 export function useFaceLandmarker(): UseFaceLandmarkerReturn {
-  const landmarkerRef = useRef<FaceLandmarker | null>(null)
+  const workerRef = useRef<Worker | null>(null)
   const timerRef = useRef<number | null>(null)
-  const smootherRef = useRef(new StateSmoother())
-  const trackerRef = useRef(new FaceTracker())
-  const lastKnownStudentsRef = useRef(new Map<number, StudentDetection>())
+  const inFlightRef = useRef(false)
+  const lastProcessingMsRef = useRef(0)
   const [students, setStudents] = useState<StudentDetection[]>([])
   const [isInitializing, setIsInitializing] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
@@ -36,61 +45,66 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
     let cancelled = false
     setIsInitializing(true)
 
-    async function init() {
-      try {
-        const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_PATH)
-        if (cancelled) return
+    const worker = new Worker(new URL('../workers/faceLandmarkerWorker.ts', import.meta.url), {
+      type: 'module',
+    })
 
-        const lm = await FaceLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: FACE_LANDMARKER_MODEL_PATH,
-            delegate: 'GPU',
-          },
-          minFaceDetectionConfidence: 0.35,
-          minFacePresenceConfidence: 0.3,
-          minTrackingConfidence: 0.3,
-          outputFacialTransformationMatrixes: true,
-          outputFaceBlendshapes: false,
-          numFaces: MAX_FACES,
-          runningMode: 'VIDEO',
-        })
+    workerRef.current = worker
+    worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+      if (cancelled) return
+      const message = event.data
 
-        if (cancelled) {
-          lm.close()
-          return
-        }
-
-        landmarkerRef.current = lm
+      if (message.type === 'ready') {
         setIsInitializing(false)
-      } catch {
-        if (!cancelled) {
-          setInitError('Unable to load the face detection model.')
-          setIsInitializing(false)
-        }
+        return
+      }
+
+      if (message.type === 'students') {
+        inFlightRef.current = false
+        lastProcessingMsRef.current = message.processingMs
+        setStudents(message.students)
+        return
+      }
+
+      if (message.type === 'error') {
+        inFlightRef.current = false
+        setInitError(message.message)
+        setIsInitializing(false)
       }
     }
 
-    init()
+    worker.onerror = () => {
+      if (!cancelled) {
+        setInitError('Unable to load the face detection model.')
+        setIsInitializing(false)
+      }
+    }
+
+    worker.postMessage({ type: 'init' })
 
     return () => {
       cancelled = true
+      worker.postMessage({ type: 'close' })
+      worker.terminate()
+      if (workerRef.current === worker) {
+        workerRef.current = null
+      }
     }
   }, [])
 
   const stopDetection = useCallback(() => {
     runningRef.current = false
+    inFlightRef.current = false
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
     }
-    smootherRef.current.clear()
-    trackerRef.current.clear()
-    lastKnownStudentsRef.current.clear()
+    workerRef.current?.postMessage({ type: 'reset' })
     setStudents([])
   }, [])
 
   const startDetection = useCallback((video: HTMLVideoElement) => {
-    if (!landmarkerRef.current || runningRef.current) return
+    if (!workerRef.current || runningRef.current) return
     runningRef.current = true
     let lastVideoTime = -1
 
@@ -99,83 +113,46 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
       timerRef.current = window.setTimeout(loop, delayMs)
     }
 
-    const loop = () => {
-      timerRef.current = null
-      if (!runningRef.current || !landmarkerRef.current) return
+    const captureFrame = async () => {
+      if (!runningRef.current || !workerRef.current) return
 
       if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         scheduleNext(DETECTION_RETRY_MS)
         return
       }
 
-      if (video.currentTime === lastVideoTime) {
+      if (inFlightRef.current || video.currentTime === lastVideoTime) {
         scheduleNext(DETECTION_RETRY_MS)
         return
       }
 
       lastVideoTime = video.currentTime
-      const detectionStartedAt = performance.now()
-      const result = landmarkerRef.current.detectForVideo(video, detectionStartedAt)
-      const boxes = (result.faceLandmarks ?? []).map((landmarks) => {
-        let minX = Infinity
-        let minY = Infinity
-        let maxX = -Infinity
-        let maxY = -Infinity
+      inFlightRef.current = true
 
-        for (const lm of landmarks) {
-          if (lm.x < minX) minX = lm.x
-          if (lm.y < minY) minY = lm.y
-          if (lm.x > maxX) maxX = lm.x
-          if (lm.y > maxY) maxY = lm.y
+      try {
+        const image = await createDetectionFrame(video)
+
+        if (!runningRef.current || !workerRef.current) {
+          inFlightRef.current = false
+          image.close()
+          return
         }
 
-        return {
-          x: minX,
-          y: minY,
-          width: maxX - minX,
-          height: maxY - minY,
-        }
-      })
-
-      const now = performance.now()
-      const stableIds = trackerRef.current.assignStableIds(boxes, now)
-      const detected: StudentDetection[] = []
-
-      for (let i = 0; i < boxes.length; i++) {
-        const boundingBox = boxes[i]
-        const stableId = stableIds[i]
-
-        let pose = null
-        const matrix = result.facialTransformationMatrixes?.[i]
-        if (matrix?.data && isMatrixValid(matrix.data)) {
-          pose = extractHeadPose(matrix.data)
-        }
-
-        const rawState = classifyAttention(pose)
-        const state = smootherRef.current.update(stableId, rawState)
-        detected.push({
-          stableId,
-          boundingBox,
-          pose,
-          state,
-        })
+        workerRef.current.postMessage(
+          { type: 'detect', image, timestamp: performance.now() },
+          [image],
+        )
+      } catch {
+        inFlightRef.current = false
+        scheduleNext(DETECTION_RETRY_MS)
       }
+    }
 
-      const nextStudents = [...detected]
-      const recentMissingIds = trackerRef.current.getRecentlyMissingTrackIds(stableIds, now, LOST_FACE_GRACE_MS)
-      for (const stableId of recentMissingIds) {
-        const previousStudent = lastKnownStudentsRef.current.get(stableId)
-        if (!previousStudent) continue
-        nextStudents.push(previousStudent)
-      }
-
-      lastKnownStudentsRef.current = new Map(
-        nextStudents.map((student) => [student.stableId, student]),
-      )
-
-      setStudents(nextStudents)
-      const elapsedMs = performance.now() - detectionStartedAt
-      scheduleNext(Math.max(0, DETECTION_INTERVAL_MS - elapsedMs))
+    const loop = () => {
+      timerRef.current = null
+      void captureFrame()
+      const adaptiveInterval = Math.max(DETECTION_INTERVAL_MS, lastProcessingMsRef.current * 2)
+      scheduleNext(adaptiveInterval)
     }
 
     scheduleNext(0)
@@ -184,7 +161,6 @@ export function useFaceLandmarker(): UseFaceLandmarkerReturn {
   useEffect(() => {
     return () => {
       stopDetection()
-      landmarkerRef.current?.close()
     }
   }, [stopDetection])
 
